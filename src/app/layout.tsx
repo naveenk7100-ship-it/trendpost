@@ -7,7 +7,7 @@ import { Shell } from '@/components/layout/Shell';
 
 export const metadata: Metadata = {
   title: 'TrendPost — AI Viral Content Engine',
-  description: 'Production full-stack SaaS platform automating multi-source trend normalization, virality scoring, Claude AI generation, and Telegram delivery.',
+  description: 'Production full-stack SaaS platform automating multi-source trend normalization, virality scoring, OpenRouter AI generation, and Telegram delivery.',
 };
 
 export default function RootLayout({

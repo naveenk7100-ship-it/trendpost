@@ -4,7 +4,7 @@ export const APP_CONFIG = {
   name: 'TrendPost',
   version: '1.0.0',
   timezone: process.env.DEFAULT_TIMEZONE || 'Asia/Kolkata',
-  defaultAiModel: process.env.DEFAULT_AI_MODEL || 'claude-3-5-sonnet-latest',
+  defaultAiModel: process.env.DEFAULT_AI_MODEL || process.env.OPENROUTER_MODEL || 'openrouter/free',
   cronDailyScanTime: '07:00', // IST
   cronTelegramDeliveryTime: '07:30', // IST
   spikeDetectionIntervalHours: 2,

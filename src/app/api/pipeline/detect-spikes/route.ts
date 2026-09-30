@@ -45,6 +45,47 @@ export async function POST(req: NextRequest) {
     // Save updated topics
     await repository.saveTopics(currentTopics);
 
+    // Ensure content ideas exist for top ranked topics
+    const existingIdeas = await repository.getContentIdeas();
+    const missingTopTopics = currentTopics.filter(
+      t => t.is_top_10 && !existingIdeas.some(i => i.topic_id === (t.id || `topic-${t.external_id}`) || i.topic?.normalized_title === t.normalized_title)
+    );
+    if (missingTopTopics.length > 0) {
+      const { generateContentUnified } = await import('@/lib/ai');
+      const newIdeas = [];
+      for (const topic of missingTopTopics.slice(0, 5)) {
+        try {
+          const { content, isDevelopmentContent, providerUsed, modelUsed, generationStatus } = await generateContentUnified(topic, { runId });
+          newIdeas.push({
+            id: `idea-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            topic_id: topic.id || `topic-${topic.external_id}`,
+            topic,
+            reel_script: content.reel_script,
+            hook: content.hook,
+            captions: content.captions,
+            hashtags: content.hashtags,
+            carousel_outline: content.carousel_outline,
+            recommended_post_time: content.recommended_post_time.iso_timestamp,
+            post_time_timezone: content.recommended_post_time.timezone,
+            content_angle: content.content_angle,
+            generation_status: generationStatus,
+            delivery_status: 'pending' as const,
+            approval_status: 'pending' as const,
+            is_development_content: isDevelopmentContent,
+            ai_provider_used: providerUsed,
+            ai_model: modelUsed,
+            created_at: nowUTC(),
+            updated_at: nowUTC(),
+          });
+        } catch {
+          // ignore single failure
+        }
+      }
+      if (newIdeas.length > 0) {
+        await repository.saveContentIdeas(newIdeas);
+      }
+    }
+
     logger.info({
       service: 'spike_detector',
       event: 'SPIKE_SCAN_COMPLETE',

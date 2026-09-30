@@ -241,6 +241,10 @@ export async function runDailyPipeline(options?: {
       durationMs,
     });
 
+    // Persist topics and content ideas directly so they are always stored regardless of caller
+    await repository.saveTopics(scoredTopics);
+    await repository.saveContentIdeas(contentIdeas);
+
     return {
       runId,
       status,

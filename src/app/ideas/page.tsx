@@ -29,6 +29,7 @@ export default function IdeasPage() {
 
   const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [activeModalIdea, setActiveModalIdea] = useState<ContentIdea | null>(null);
   const [modalTab, setModalTab] = useState<'script' | 'captions' | 'carousel' | 'hashtags'>('script');
 
@@ -43,6 +44,25 @@ export default function IdeasPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateIdeas = async () => {
+    setGenerating(true);
+    info('Generating Content Ideas', 'Scanning ranked trends and calling OpenRouter AI...');
+    try {
+      const res = await fetch('/api/ideas/generate', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        success('Ideas Generated', `Successfully created ${data.ideasCount} original content packages!`);
+        fetchIdeas();
+      } else {
+        error('Generation Error', data.error || 'Failed to generate ideas');
+      }
+    } catch {
+      error('Error', 'Failed to generate content ideas');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -125,16 +145,32 @@ export default function IdeasPage() {
             Original AI-generated Reel scripts, carousels, 15 hashtags & captions with atomic two-user claim locking.
           </p>
         </div>
+        <button
+          onClick={handleGenerateIdeas}
+          disabled={generating}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm disabled:opacity-50 transition self-start sm:self-auto"
+        >
+          <Sparkles className={`w-3.5 h-3.5 ${generating ? 'animate-spin' : ''}`} />
+          <span>{generating ? 'Generating Ideas...' : 'Generate Content Ideas'}</span>
+        </button>
       </div>
 
       {/* Ideas Grid */}
       {ideas.length === 0 ? (
-        <div className="bg-card rounded-2xl border border-border p-12 text-center text-slate-400 space-y-3">
+        <div className="bg-card rounded-2xl border border-border p-12 text-center text-slate-400 space-y-4">
           <Lightbulb className="w-12 h-12 mx-auto text-slate-500 opacity-40" />
           <div className="font-semibold text-base">No content ideas generated yet</div>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Click "Run 07:00 Pipeline" on the Overview dashboard to scan trends and generate production-ready social media packages using Claude.
+            Generate production-ready social media packages (Reel scripts, carousels, 15 hashtags & captions) for ranked Indian trends using OpenRouter AI.
           </p>
+          <button
+            onClick={handleGenerateIdeas}
+            disabled={generating}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm disabled:opacity-50 transition"
+          >
+            <Sparkles className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} />
+            <span>{generating ? 'Generating Ideas...' : 'Generate Content Ideas Now'}</span>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,13 +217,13 @@ export default function IdeasPage() {
 
                   {/* Mode / Content Origin Indicator */}
                   <div className="flex items-center gap-1.5">
-                    {idea.is_development_content || idea.ai_provider_used === 'development_test' ? (
+                    {idea.is_development_content || idea.ai_provider_used === 'development_test' || idea.ai_provider_used === 'development' ? (
                       <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 tracking-wider">
                         DEVELOPMENT TEST CONTENT
                       </span>
                     ) : (
                       <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 tracking-wider">
-                        CLAUDE 3.5 PRODUCTION
+                        {idea.ai_provider_used === 'openrouter' ? 'OPENROUTER AI' : 'AI GENERATED'}
                       </span>
                     )}
                   </div>

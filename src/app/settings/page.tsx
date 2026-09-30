@@ -16,7 +16,7 @@ export default function SystemSettingsPage() {
     spike_score_change_threshold: 20,
     spike_velocity_threshold: 40,
     minimum_significance: 60,
-    ai_model: 'claude-3-5-sonnet-latest',
+    ai_model: 'openrouter/free',
     daily_generation_limit: 10,
     refresh_cooldown_seconds: 300,
   });
@@ -197,16 +197,18 @@ export default function SystemSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1">
-                Anthropic Model Engine
+                OpenRouter Model Engine
               </label>
               <select
                 value={settings.ai_model}
                 onChange={(e) => setSettings({ ...settings, ai_model: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-border text-xs text-foreground focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="claude-3-5-sonnet-latest">claude-3-5-sonnet-latest (Recommended)</option>
-                <option value="claude-3-5-haiku-latest">claude-3-5-haiku-latest (Faster)</option>
-                <option value="claude-3-opus-latest">claude-3-opus-latest (Deepest)</option>
+                <option value="openrouter/free">openrouter/free (Recommended Free Router)</option>
+                <option value="meta-llama/llama-3.3-70b-instruct:free">meta-llama/llama-3.3-70b-instruct:free</option>
+                <option value="google/gemini-2.0-flash-exp:free">google/gemini-2.0-flash-exp:free</option>
+                <option value="mistralai/mistral-7b-instruct:free">mistralai/mistral-7b-instruct:free</option>
+                <option value="anthropic/claude-3.5-sonnet">anthropic/claude-3.5-sonnet (via OpenRouter)</option>
               </select>
             </div>
 

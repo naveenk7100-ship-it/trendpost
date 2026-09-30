@@ -40,7 +40,7 @@ export default function LogsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Structured System Logs</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Real-time observability stream capturing pipeline events, provider latencies, Claude generations, and error telemetry.
+            Real-time observability stream capturing pipeline events, provider latencies, OpenRouter generations, and error telemetry.
           </p>
         </div>
 
@@ -79,6 +79,8 @@ export default function LogsPage() {
             className="bg-slate-50 dark:bg-slate-900/60 border border-border rounded-xl px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
           >
             <option value="all">All Services</option>
+            <option value="openrouter">openrouter</option>
+            <option value="ai">ai</option>
             <option value="pipeline">pipeline</option>
             <option value="google_trends">google_trends</option>
             <option value="youtube">youtube</option>

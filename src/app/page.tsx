@@ -73,7 +73,7 @@ export default function OverviewPage() {
 
   const handleRunDailyPipeline = async () => {
     setPipelineRunning(true);
-    info('Pipeline Triggered', 'Executing 07:00 AM IST Daily Pipeline: Fetching trends & calling Claude...');
+    info('Pipeline Triggered', 'Executing 07:00 AM IST Daily Pipeline: Fetching trends & calling OpenRouter AI...');
     try {
       const res = await fetch('/api/pipeline/daily', { method: 'POST' });
       const data = await res.json();

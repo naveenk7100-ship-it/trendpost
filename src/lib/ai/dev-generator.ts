@@ -37,7 +37,7 @@ export class DevelopmentAiGenerator {
       hook: `[DEVELOPMENT TEST CONTENT] Why "${topic.title}" is breaking the internet in India today`,
       reel_script: {
         hook_3s: `[DEVELOPMENT TEST CONTENT] Stop scrolling! ${topic.title} just triggered massive reactions across India.`,
-        body_30s: `Here is the development test breakdown for ${topic.title}. Metrics report a virality score of ${topic.virality_score}/100 and velocity of ${topic.velocity.toLocaleString()} interactions per hour. Production Claude 3.5 Sonnet generation will automatically replace this simulated content once ANTHROPIC_API_KEY is configured in Settings.`,
+        body_30s: `Here is the development test breakdown for ${topic.title}. Metrics report a virality score of ${topic.virality_score}/100 and velocity of ${topic.velocity.toLocaleString()} interactions per hour. Production OpenRouter AI generation will automatically replace this simulated content once OPENROUTER_API_KEY is configured in Settings.`,
         payoff: `This trend highlights a major cultural and public interest shift currently playing out nationwide.`,
         cta: `Follow TrendPost for daily high-signal Indian trend intelligence! Drop your thoughts below.`,
         estimated_duration_seconds: 30,
