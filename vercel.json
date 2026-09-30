@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/pipeline/daily",
+      "schedule": "30 1 * * *"
+    },
+    {
+      "path": "/api/pipeline/deliver",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/pipeline/detect-spikes",
+      "schedule": "0 */2 * * *"
+    }
+  ]
+}
