@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { 
   User, 
   NormalizedTopic, 
@@ -9,7 +11,6 @@ import {
   TrendRun,
   ApiKeySetting 
 } from '@/types';
-import { supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { ClaimManager } from '@/lib/claims/claim-manager';
 import { logger } from '@/lib/logger';
 import { APP_CONFIG, nowUTC } from '@/lib/config';
@@ -38,7 +39,33 @@ const SEED_USERS: User[] = [
   },
 ];
 
-// In-memory data store for live operation & zero-config testing
+interface PersistedState {
+  users?: User[];
+  topics?: NormalizedTopic[];
+  ideas?: ContentIdea[];
+  deliveries?: Delivery[];
+  spikeEvents?: SpikeEvent[];
+  trendRuns?: TrendRun[];
+  settings?: SystemSettings;
+  apiKeys?: ApiKeySetting[];
+}
+
+function getStoreFilePath(): string {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join('/tmp', 'trendpost-db.json');
+  }
+  const dataDir = path.join(process.cwd(), '.data');
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    return path.join(dataDir, 'trendpost-db.json');
+  } catch {
+    return path.join('/tmp', 'trendpost-db.json');
+  }
+}
+
+// Zero-config, Vercel-compatible file & memory persistent store
 class DataRepository {
   private users: User[] = [...SEED_USERS];
   private topics: NormalizedTopic[] = [];
@@ -116,12 +143,49 @@ class DataRepository {
     refresh_cooldown_seconds: APP_CONFIG.refreshCooldownSeconds,
   };
 
+  constructor() {
+    this.loadFromDisk();
+  }
+
+  private loadFromDisk(): void {
+    try {
+      const filePath = getStoreFilePath();
+      if (fs.existsSync(filePath)) {
+        const raw = fs.readFileSync(filePath, 'utf-8');
+        const parsed: PersistedState = JSON.parse(raw);
+        if (Array.isArray(parsed.users) && parsed.users.length > 0) this.users = parsed.users;
+        if (Array.isArray(parsed.topics)) this.topics = parsed.topics;
+        if (Array.isArray(parsed.ideas)) this.ideas = parsed.ideas;
+        if (Array.isArray(parsed.deliveries)) this.deliveries = parsed.deliveries;
+        if (Array.isArray(parsed.spikeEvents)) this.spikeEvents = parsed.spikeEvents;
+        if (Array.isArray(parsed.trendRuns)) this.trendRuns = parsed.trendRuns;
+        if (parsed.settings) this.settings = { ...this.settings, ...parsed.settings };
+      }
+    } catch {
+      // In-memory fallback is always operational
+    }
+  }
+
+  private persist(): void {
+    try {
+      const filePath = getStoreFilePath();
+      const state: PersistedState = {
+        users: this.users,
+        topics: this.topics,
+        ideas: this.ideas,
+        deliveries: this.deliveries,
+        spikeEvents: this.spikeEvents,
+        trendRuns: this.trendRuns,
+        settings: this.settings,
+      };
+      fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf-8');
+    } catch {
+      // Silently fall back to in-memory state
+    }
+  }
+
   // USERS
   async getUsers(): Promise<User[]> {
-    if (isSupabaseConfigured && supabaseAdmin) {
-      const { data } = await supabaseAdmin.from('users').select('*');
-      if (data && data.length > 0) return data;
-    }
     return this.users;
   }
 
@@ -137,27 +201,16 @@ class DataRepository {
 
   // TOPICS
   async getTopics(): Promise<NormalizedTopic[]> {
-    if (isSupabaseConfigured && supabaseAdmin) {
-      const { data } = await supabaseAdmin.from('topics').select('*').order('virality_score', { ascending: false });
-      if (data && data.length > 0) return data;
-    }
     return this.topics;
   }
 
   async saveTopics(newTopics: NormalizedTopic[]): Promise<void> {
     this.topics = [...newTopics];
-    if (isSupabaseConfigured && supabaseAdmin) {
-      try {
-        await supabaseAdmin.from('topics').insert(newTopics);
-      } catch (err) {
-        logger.warn({ service: 'db', event: 'DB_INSERT_WARN', message: 'Could not sync topics to Supabase table' });
-      }
-    }
+    this.persist();
   }
 
   // CONTENT IDEAS
   async getContentIdeas(): Promise<ContentIdea[]> {
-    // Attach active claims to each idea
     return this.ideas.map(idea => ({
       ...idea,
       active_claim: ClaimManager.getActiveClaim(idea.id),
@@ -166,6 +219,7 @@ class DataRepository {
 
   async saveContentIdeas(newIdeas: ContentIdea[]): Promise<void> {
     this.ideas = [...newIdeas, ...this.ideas.filter(existing => !newIdeas.some(n => n.id === existing.id))];
+    this.persist();
   }
 
   async updateIdeaApprovalStatus(ideaId: string, status: 'approved' | 'rejected'): Promise<boolean> {
@@ -173,6 +227,7 @@ class DataRepository {
     if (!idea) return false;
     idea.approval_status = status;
     idea.updated_at = nowUTC();
+    this.persist();
     logger.info({
       service: 'editorial',
       event: status === 'approved' ? 'IDEA_APPROVED' : 'IDEA_REJECTED',
@@ -188,11 +243,19 @@ class DataRepository {
     if (!user) {
       return { success: false, message: 'User not found' };
     }
-    return await ClaimManager.claimIdea(ideaId, user);
+    const result = await ClaimManager.claimIdea(ideaId, user);
+    if (result.success) {
+      this.persist();
+    }
+    return result;
   }
 
   async releaseIdea(ideaId: string, userId: string): Promise<{ success: boolean; message: string }> {
-    return await ClaimManager.releaseClaim(ideaId, userId);
+    const result = await ClaimManager.releaseClaim(ideaId, userId);
+    if (result.success) {
+      this.persist();
+    }
+    return result;
   }
 
   // DELIVERIES
@@ -202,6 +265,7 @@ class DataRepository {
 
   async saveDeliveries(newDeliveries: Delivery[]): Promise<void> {
     this.deliveries.unshift(...newDeliveries);
+    this.persist();
   }
 
   // SPIKE EVENTS
@@ -211,6 +275,7 @@ class DataRepository {
 
   async saveSpikeEvents(spikes: SpikeEvent[]): Promise<void> {
     this.spikeEvents.unshift(...spikes);
+    this.persist();
   }
 
   // TREND RUNS
@@ -220,6 +285,7 @@ class DataRepository {
 
   async recordTrendRun(run: TrendRun): Promise<void> {
     this.trendRuns.unshift(run);
+    this.persist();
   }
 
   // SETTINGS
@@ -229,6 +295,7 @@ class DataRepository {
 
   async updateSettings(newSettings: Partial<SystemSettings>): Promise<SystemSettings> {
     this.settings = { ...this.settings, ...newSettings };
+    this.persist();
     return this.settings;
   }
 
@@ -276,6 +343,7 @@ class DataRepository {
       };
       this.apiKeys.push(setting);
     }
+    this.persist();
     return setting;
   }
 
@@ -288,6 +356,7 @@ class DataRepository {
     if (setting) {
       setting.status = status;
       setting.last_tested_at = lastTestedAt;
+      this.persist();
     }
   }
 }

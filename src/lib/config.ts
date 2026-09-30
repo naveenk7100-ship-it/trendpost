@@ -51,12 +51,6 @@ export function nowUTC(): string {
  */
 export function getEnvStatus() {
   return {
-    supabaseConfigured: Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL && 
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy') &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY && 
-      !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy')
-    ),
     openrouterConfigured: Boolean(process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.trim().length > 5),
     openrouterModel: process.env.OPENROUTER_MODEL || 'openrouter/free',
     claudeConfigured: Boolean(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.startsWith('sk-ant')),

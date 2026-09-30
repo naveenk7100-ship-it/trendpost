@@ -22,8 +22,7 @@ This document provides the definitive verification matrix for TrendPost, specify
 | **Get Updates Now (with Cooldown)** | ✅ **LIVE & ACTIVE** | ✅ Yes (300s Rate-Limit Protection) | ❌ None | [`src/app/api/pipeline/refresh/route.ts`](file:///C:/Users/navee/.gemini/antigravity/scratch/trendpost/src/app/api/pipeline/refresh/route.ts) |
 | **Publishing Calendar (IST Dayparts)** | ✅ **LIVE & ACTIVE** | ✅ Yes (Morning, Afternoon, Evening, Night) | ❌ None | [`src/app/calendar/page.tsx`](file:///C:/Users/navee/.gemini/antigravity/scratch/trendpost/src/app/calendar/page.tsx) |
 | **Structured Observability Logs** | ✅ **LIVE & ACTIVE** | ✅ Yes (Ring buffer + JSON explorer) | ❌ None | [`src/app/logs/page.tsx`](file:///C:/Users/navee/.gemini/antigravity/scratch/trendpost/src/app/logs/page.tsx) |
-| **Supabase PostgreSQL Schema & RLS** | ✅ **READY TO MIGRATE** | ✅ Yes (Schema SQL + Stored Procedures) | Supabase Cloud / Self-hosted DB | [`supabase/migrations/20260929_init_trendpost.sql`](file:///C:/Users/navee/.gemini/antigravity/scratch/trendpost/supabase/migrations/20260929_init_trendpost.sql) |
-| **9 Supabase Edge Functions** | ✅ **PREPARED** | ✅ Yes (Deno Edge Functions) | Supabase CLI (`supabase functions deploy`) | [`supabase/functions/`](file:///C:/Users/navee/.gemini/antigravity/scratch/trendpost/supabase/functions/) |
+| **Zero-Config Persistent Storage Engine** | ✅ **LIVE & ACTIVE** | ✅ Yes (Vercel Serverless & Local File-Backed) | ❌ None | [`src/lib/db/repository.ts`](file:///C:/Users/navee/.gemini/antigravity/scratch/trendpost/src/lib/db/repository.ts) |
 
 ---
 

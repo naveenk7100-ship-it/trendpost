@@ -54,8 +54,8 @@ TrendPost is a production-grade full-stack SaaS application that automates the v
                                                │
                                                ▼
                               ┌─────────────────────────────────┐
-                              │     Supabase / PostgreSQL DB    │
-                              │  Atomic Claims, RLS, Audit Logs │
+                              │  Persistent Storage Engine      │
+                              │  Atomic Claims, Two-User Sync   │
                               └────────┬───────────────┬────────┘
                                        │               │
                                        ▼               ▼
@@ -67,11 +67,11 @@ TrendPost is a production-grade full-stack SaaS application that automates the v
 ```
 
 - **Frontend & Full-Stack:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Lucide Icons.
-- **Database & Auth:** Supabase (PostgreSQL 15), Row Level Security (RLS), atomic transactional locks.
+- **Database & Storage:** Zero-config persistent store with atomic transactional locks (Vercel serverless & local file-backed).
 - **Primary AI Provider:** OpenRouter API (`https://openrouter.ai/api/v1`) using `openrouter/free` (or user-defined model in `OPENROUTER_MODEL`).
 - **Secondary / Fallback AI:** Development AI Generator (zero external credentials required, structured template engine).
 - **Messaging:** Telegram Bot API with webhook callback handlers.
-- **Scheduling:** Standard crons configured for Asia/Kolkata (IST), executed via Vercel Cron, Supabase pg_cron, or external HTTP triggers.
+- **Scheduling:** Standard crons configured for Asia/Kolkata (IST), executed via Vercel Cron.
 
 ---
 
@@ -116,11 +116,6 @@ Create `.env.local` based on `.env.example`. All credentials are kept strictly s
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 DEFAULT_TIMEZONE=Asia/Kolkata
 
-# Supabase Database & Auth (Optional in Development Mode)
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-
 # OpenRouter AI Provider (Primary)
 OPENROUTER_API_KEY=
 OPENROUTER_MODEL=openrouter/free
@@ -145,8 +140,8 @@ TrendPost is designed to be **100% functional out of the box** without any paid 
 
 - **Free Trend Sources:** Google Trends India (official RSS) and Reddit (`r/all`, `r/india` JSON feeds) require no API keys and extract real, live data.
 - **Development AI Generator:** When `OPENROUTER_API_KEY` is not provided, TrendPost automatically activates its built-in Development AI Generator. It produces compliant 3-second hooks, 30-second Reel scripts, 3 caption options, 15 hashtags, and carousel outlines conforming strictly to the Zod schema.
-- **Simulated Telegram Delivery:** When `TELEGRAM_BOT_TOKEN` is not configured, deliveries are captured and recorded in the database / local store. You can preview messages, verify formatting, and click inline Approve, Reject, and Claim buttons directly in the web dashboard at `/deliveries`.
-- **In-Memory & SQLite Fallback:** When Supabase credentials are not supplied, the repository operates using an atomic in-memory database store that supports all CRUD operations, claims, and log recording.
+- **Simulated Telegram Delivery:** When `TELEGRAM_BOT_TOKEN` is not configured, deliveries are captured and recorded in the local store. You can preview messages, verify formatting, and click inline Approve, Reject, and Claim buttons directly in the web dashboard at `/deliveries`.
+- **Zero-Config Persistent Storage:** Operates using a fast, atomic file-backed persistent store that supports all CRUD operations, claims, and audit logs.
 
 ---
 
@@ -168,23 +163,13 @@ TrendPost uses **OpenRouter** as its primary production AI generator. OpenRouter
 
 ---
 
-## 7. Supabase Setup
+## 7. Storage & Concurrency Architecture
 
-### Database Provisioning:
-1. Create a new project at [supabase.com](https://supabase.com).
-2. Copy your **Project URL**, **Anon Key**, and **Service Role Key** into `.env.local`:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
-   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
-   ```
-3. In the Supabase SQL Editor, run the migration script:
-   - File: `supabase/migrations/20260929_init_trendpost.sql`
-4. This migration automatically configures:
-   - 9 core tables (`users`, `api_keys`, `trend_runs`, `topics`, `content_ideas`, `idea_claims`, `deliveries`, `spike_events`, `system_logs`)
-   - Unique partial index `idx_idea_claims_single_active` on `idea_claims(idea_id) WHERE (released_at IS NULL)` enforcing atomic concurrency locks.
-   - Comprehensive Row Level Security (RLS) policies.
-   - Pre-seeded users: **Person A** (`a0000000-0000-0000-0000-000000000001`) and **Person B** (`b0000000-0000-0000-0000-000000000002`).
+### Zero-Config Persistent Storage:
+TrendPost requires no external database setup. The application features a built-in atomic storage engine:
+- **Serverless Persistence:** On Vercel, state is automatically persisted in `/tmp/trendpost-db.json` across warm invocations. In local development, state is persisted in `.data/trendpost-db.json`.
+- **Transactional Atomic Claims:** Single-claimer guarantees prevent concurrency collisions between Person A and Person B.
+- **Pre-Seeded Accounts:** Pre-configured with **Person A** (`a0000000-0000-0000-0000-000000000001`) and **Person B** (`b0000000-0000-0000-0000-000000000002`).
 
 ---
 
@@ -245,9 +230,6 @@ All scheduled jobs operate strictly with reference to **Asia/Kolkata (IST)**:
    - `DEFAULT_TIMEZONE=Asia/Kolkata`
    - `OPENROUTER_API_KEY`
    - `OPENROUTER_MODEL=openrouter/free`
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_WEBHOOK_SECRET`
 5. Click **Deploy**. Vercel will build the project using `next build` and configure crons from `vercel.json`.

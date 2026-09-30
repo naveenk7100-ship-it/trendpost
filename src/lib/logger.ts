@@ -1,6 +1,6 @@
 import { SystemLog } from '@/types';
 
-// In-memory ring buffer for instant fast retrieval on dashboard + Supabase database persistence
+// In-memory ring buffer for instant fast retrieval on dashboard + structured logging
 const MAX_IN_MEMORY_LOGS = 500;
 const globalForLogs = globalThis as unknown as { __trendpost_logs__?: SystemLog[] };
 const inMemoryLogs: SystemLog[] = globalForLogs.__trendpost_logs__ ?? [];
