@@ -31,6 +31,11 @@ yarn-error.log*
 # Vercel deployment artifacts
 .vercel
 
+# Supabase CLI temp files
+supabase/.temp/
+supabase/.branches/
+
+
 # TypeScript cache
 *.tsbuildinfo
 next-env.d.ts.bak
